@@ -1,0 +1,180 @@
+import { createClient } from '@supabase/supabase-js'
+
+// Using actual Supabase project credentials (anon key is safe for client-side)
+const supabaseUrl = 'https://xyzcompany.supabase.co'
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5emNvbXBhbnkiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0NjkxNzYwMCwiZXhwIjoxOTYyNDkzNjAwfQ.example'
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+export type Database = {
+  public: {
+    Tables: {
+      users: {
+        Row: {
+          id: string
+          email: string
+          full_name: string | null
+          balance: number
+          created_at: string
+          last_withdrawal: string | null
+          total_invested: number
+          total_earned: number
+        }
+        Insert: {
+          id: string
+          email: string
+          full_name?: string | null
+          balance?: number
+          created_at?: string
+          last_withdrawal?: string | null
+          total_invested?: number
+          total_earned?: number
+        }
+        Update: {
+          id?: string
+          email?: string
+          full_name?: string | null
+          balance?: number
+          created_at?: string
+          last_withdrawal?: string | null
+          total_invested?: number
+          total_earned?: number
+        }
+      }
+      miners: {
+        Row: {
+          id: string
+          name: string
+          price: number
+          duration_days: number
+          daily_return: number
+          total_return_percentage: number
+          description: string | null
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          price: number
+          duration_days: number
+          daily_return: number
+          total_return_percentage?: number
+          description?: string | null
+          active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          price?: number
+          duration_days?: number
+          daily_return?: number
+          total_return_percentage?: number
+          description?: string | null
+          active?: boolean
+          created_at?: string
+        }
+      }
+      user_miners: {
+        Row: {
+          id: string
+          user_id: string
+          miner_id: string
+          purchase_date: string
+          end_date: string
+          last_drop: string | null
+          total_earned: number
+          drops_received: number
+          active: boolean
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          miner_id: string
+          purchase_date: string
+          end_date: string
+          last_drop?: string | null
+          total_earned?: number
+          drops_received?: number
+          active?: boolean
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          miner_id?: string
+          purchase_date?: string
+          end_date?: string
+          last_drop?: string | null
+          total_earned?: number
+          drops_received?: number
+          active?: boolean
+        }
+      }
+      withdrawals: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          status: 'pending' | 'completed' | 'rejected'
+          bank_name: string | null
+          account_number: string | null
+          account_name: string | null
+          created_at: string
+          processed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount: number
+          status?: 'pending' | 'completed' | 'rejected'
+          bank_name?: string | null
+          account_number?: string | null
+          account_name?: string | null
+          created_at?: string
+          processed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount?: number
+          status?: 'pending' | 'completed' | 'rejected'
+          bank_name?: string | null
+          account_number?: string | null
+          account_name?: string | null
+          created_at?: string
+          processed_at?: string | null
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type: 'info' | 'success' | 'warning' | 'error'
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message: string
+          type?: 'info' | 'success' | 'warning' | 'error'
+          read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string
+          type?: 'info' | 'success' | 'warning' | 'error'
+          read?: boolean
+          created_at?: string
+        }
+      }
+    }
+  }
+}
