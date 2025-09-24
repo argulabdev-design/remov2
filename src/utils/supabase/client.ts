@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Using actual Supabase project credentials (anon key is safe for client-side)
-const supabaseUrl = 'https://xyzcompany.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5emNvbXBhbnkiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0NjkxNzYwMCwiZXhwIjoxOTYyNDkzNjAwfQ.example'
+// Supabase configuration - replace with your actual credentials
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key-here'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
