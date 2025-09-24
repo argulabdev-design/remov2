@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 
 // Demo Supabase configuration - replace with your actual credentials
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://demo-project.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlbW8tcHJvamVjdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ1MTkyMDAwLCJleHAiOjE5NjA3NjgwMDB9.demo-key'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzenNyY2xwa3BueWNsa3VybHBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1OTkyMjEsImV4cCI6MjA3NDE3NTIyMX0.YkNHcJ1B0Kk6dnwMpwsDzx3XR7rDcBhHEHUzJTut994'
 
 // Validate configuration
 if (!supabaseUrl || supabaseUrl.includes('your-project') || supabaseUrl.includes('demo-project')) {
