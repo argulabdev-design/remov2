@@ -1,16 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, AuthError } from '@supabase/supabase-js'
-import { supabase } from '../utils/supabase/client'
+import { User, AuthError } from 'firebase/auth'
+import { auth } from '../utils/firebase/client'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  updateProfile as firebaseUpdateProfile
+} from 'firebase/auth'
+
 
 interface UserProfile {
-  id: string
-  email: string
-  full_name: string | null
-  balance: number
-  created_at: string
-  last_withdrawal: string | null
-  total_invested: number
-  total_earned: number
+  uid: string
+  email: string | null
+  displayName: string | null
 }
 
 interface AuthContextType {
@@ -21,7 +24,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>
-  refreshProfile: () => Promise<void>
   isAdmin: boolean
 }
 
@@ -35,118 +37,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = user?.email === 'Admin@remo.com'
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        fetchProfile(session.user.id)
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser)
+      if (firebaseUser) {
+        setProfile({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName
+        })
       } else {
-        setLoading(false)
+        setProfile(null)
       }
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null)
-        if (session?.user) {
-          await fetchProfile(session.user.id)
-        } else {
-          setProfile(null)
-          setLoading(false)
-        }
-      }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        console.error('Error fetching profile:', error)
-        return
-      }
-
-      setProfile(data)
-    } catch (error) {
-      console.error('Error fetching profile:', error)
-    } finally {
       setLoading(false)
-    }
-  }
+    })
+    return () => unsubscribe()
+  }, [])
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName
-          }
-        }
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      await firebaseUpdateProfile(userCredential.user, { displayName: fullName })
+      setUser(userCredential.user)
+      setProfile({
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName: fullName
       })
+      return { error: null }
+    } catch (error: any) {
       return { error }
-    } catch (networkError) {
-      console.error('Network error during signup:', networkError)
-      return { 
-        error: { 
-          message: 'Unable to connect to authentication service. Please check your internet connection and try again.',
-          name: 'NetworkError',
-          status: 0
-        } as any
-      }
     }
   }
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      setUser(userCredential.user)
+      setProfile({
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName: userCredential.user.displayName
       })
+      return { error: null }
+    } catch (error: any) {
       return { error }
-    } catch (networkError) {
-      console.error('Network error during signin:', networkError)
-      return { 
-        error: { 
-          message: 'Unable to connect to authentication service. Please check your internet connection and try again.',
-          name: 'NetworkError',
-          status: 0
-        } as any
-      }
     }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    await firebaseSignOut(auth)
+    setUser(null)
+    setProfile(null)
   }
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return
-
-    const { error } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('id', user.id)
-
-    if (!error && profile) {
-      setProfile({ ...profile, ...updates })
-    }
+    await firebaseUpdateProfile(user, updates)
+    setProfile({ ...profile, ...updates })
   }
 
-  const refreshProfile = async () => {
-    if (user) {
-      await fetchProfile(user.id)
-    }
-  }
+  // No refreshProfile needed for Firebase
 
   const value = {
     user,
