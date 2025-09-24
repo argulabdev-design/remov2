@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return
     await firebaseUpdateProfile(user, updates)
-    setProfile({ ...profile, ...updates })
+  setProfile(prev => prev ? { ...prev, ...updates, uid: prev.uid } : null)
   }
 
   // No refreshProfile needed for Firebase
@@ -106,7 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
     updateProfile,
-    refreshProfile,
     isAdmin
   }
 
