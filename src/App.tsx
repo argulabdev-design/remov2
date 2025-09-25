@@ -18,6 +18,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [showAdminAccess, setShowAdminAccess] = useState(false)
   const [adminAccessGranted, setAdminAccessGranted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Handle admin login flow
   React.useEffect(() => {
@@ -26,6 +27,18 @@ function AppContent() {
     }
   }, [isAdmin, adminAccessGranted])
 
+  // Error boundary for auth errors
+  React.useEffect(() => {
+    const handleError = (error: any) => {
+      console.error('App error:', error);
+      if (error.code === 'auth/network-request-failed') {
+        setError('Network connection failed. Please check your internet connection.');
+      }
+    };
+
+    window.addEventListener('unhandledrejection', handleError);
+    return () => window.removeEventListener('unhandledrejection', handleError);
+  }, []);
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -37,6 +50,27 @@ function AppContent() {
     )
   }
 
+  // Show error screen if there's a critical error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Connection Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              window.location.reload();
+            }}
+            className="px-4 py-2 bg-mining-600 text-white rounded-lg hover:bg-mining-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
   // Show admin access code screen
   if (showAdminAccess && isAdmin && !adminAccessGranted) {
     return (

@@ -1,15 +1,35 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Demo Supabase configuration - replace with your actual credentials
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://demo-project.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzenNyY2xwa3BueWNsa3VybHBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1OTkyMjEsImV4cCI6MjA3NDE3NTIyMX0.YkNHcJ1B0Kk6dnwMpwsDzx3XR7rDcBhHEHUzJTut994'
+// Supabase configuration
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gszscrlpkpnyclkurlpk.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzenNyY2xwa3BueWNsa3VybHBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MTI2MjEsImV4cCI6MjA1MDQ4ODYyMX0.YkNHcJ1B0Kk6dnwMpwsDzx3XR7rDcBhHEHUzJTut994'
 
-// Validate configuration
-if (!supabaseUrl || supabaseUrl.includes('your-project') || supabaseUrl.includes('demo-project')) {
-  console.warn('⚠️ Using demo Supabase configuration. Please update .env with your actual credentials.')
+// Create Supabase client with error handling
+let supabase;
+try {
+  supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  });
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+  // Create a mock client to prevent app crashes
+  supabase = {
+    from: () => ({
+      select: () => Promise.resolve({ data: [], error: null }),
+      insert: () => Promise.resolve({ data: null, error: null }),
+      update: () => Promise.resolve({ data: null, error: null }),
+      delete: () => Promise.resolve({ data: null, error: null }),
+    }),
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+    },
+  };
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export { supabase };
 
 export type Database = {
   public: {

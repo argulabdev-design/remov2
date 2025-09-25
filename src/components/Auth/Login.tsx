@@ -18,13 +18,20 @@ export default function Login({ onSwitchToSignup }: LoginProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields')
+      return
+    }
+    
     setLoading(true)
     setError('')
 
     const { error } = await signIn(formData.email, formData.password)
     
     if (error) {
-      setError(error.message)
+      setError(error.message || 'Login failed. Please try again.')
+      console.error('Login error:', error)
     }
     
     setLoading(false)
