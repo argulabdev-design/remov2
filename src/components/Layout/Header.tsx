@@ -85,7 +85,7 @@ export default function Header() {
                 <div className="hidden sm:flex items-center bg-mining-50 px-3 py-1 rounded-lg">
                   <Wallet className="h-4 w-4 text-mining-600 mr-2" />
                   <span className="text-sm font-medium text-mining-900">
-                    ₦{profile.balance.toLocaleString()}
+                    ₦{profile.balance?.toLocaleString() || '0'}
                   </span>
                 </div>
               )}

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, AuthError } from 'firebase/auth'
 import { auth } from '../utils/firebase/client'
+import { supabase } from '../utils/supabase/client'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -11,9 +12,14 @@ import {
 
 
 interface UserProfile {
-  uid: string
+  id: string
   email: string | null
-  displayName: string | null
+  full_name: string | null
+  balance: number
+  total_invested: number
+  total_earned: number
+  created_at: string
+  last_withdrawal: string | null
 }
 
 interface AuthContextType {
@@ -40,11 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser)
       if (firebaseUser) {
-        setProfile({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName
-        })
+        fetchUserProfile(firebaseUser.uid)
       } else {
         setProfile(null)
       }
@@ -53,6 +55,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe()
   }, [])
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user profile:', error)
+        // Create profile if it doesn't exist
+        const user = auth.currentUser
+        if (user) {
+          await createUserProfile(user)
+        }
+        return
+      }
+
+      if (data) {
+        setProfile({
+          id: data.id,
+          email: data.email,
+          full_name: data.full_name,
+          balance: data.balance || 0,
+          total_invested: data.total_invested || 0,
+          total_earned: data.total_earned || 0,
+          created_at: data.created_at,
+          last_withdrawal: data.last_withdrawal
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    }
+  }
+
+  const createUserProfile = async (firebaseUser: User) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          full_name: firebaseUser.displayName || '',
+          balance: 0,
+          total_invested: 0,
+          total_earned: 0
+        })
+
+      if (error) {
+        console.error('Error creating user profile:', error)
+      } else {
+        // Fetch the newly created profile
+        await fetchUserProfile(firebaseUser.uid)
+      }
+    } catch (error) {
+      console.error('Error creating profile:', error)
+    }
+  }
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       setLoading(true);
@@ -60,31 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await firebaseUpdateProfile(userCredential.user, { displayName: fullName })
       
       // Create user profile in Supabase
-      const { error: supabaseError } = await supabase
-        .from('users')
-        .insert({
-          id: userCredential.user.uid,
-          email: userCredential.user.email,
-          full_name: fullName,
-          balance: 0,
-          total_invested: 0,
-          total_earned: 0
-        });
+      await createUserProfile(userCredential.user)
       
-      if (supabaseError) {
-        console.error('Error creating user profile:', supabaseError);
-      }
-      
-      setUser(userCredential.user)
-      setProfile({
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-        displayName: fullName,
-        balance: 0,
-        total_invested: 0,
-        total_earned: 0,
-        created_at: new Date().toISOString()
-      })
       return { error: null }
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -111,27 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
       
-      // Fetch user profile from Supabase
-      const { data: profileData, error: profileError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userCredential.user.uid)
-        .single();
-      
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error fetching user profile:', profileError);
-      }
-      
-      setUser(userCredential.user)
-      setProfile({
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-        displayName: userCredential.user.displayName,
-        balance: profileData?.balance || 0,
-        total_invested: profileData?.total_invested || 0,
-        total_earned: profileData?.total_earned || 0,
-        created_at: profileData?.created_at || new Date().toISOString()
-      })
+      // Profile will be fetched by the auth state change listener
       return { error: null }
     } catch (error: any) {
       console.error('Sign in error:', error);
@@ -164,10 +181,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return
     await firebaseUpdateProfile(user, updates)
-  setProfile(prev => prev ? { ...prev, ...updates, uid: prev.uid } : null)
+    setProfile(prev => prev ? { ...prev, ...updates } : null)
   }
 
-  // No refreshProfile needed for Firebase
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchUserProfile(user.uid)
+    }
+  }
 
   const value = {
     user,
@@ -177,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
     updateProfile,
+    refreshProfile,
     isAdmin
   }
 

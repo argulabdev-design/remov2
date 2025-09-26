@@ -21,9 +21,21 @@ export default function Profile() {
     setError('')
 
     try {
+      // Update Firebase profile
       await updateProfile({
         full_name: formData.full_name
       })
+      
+      // Update Supabase profile
+      const { error: supabaseError } = await supabase
+        .from('users')
+        .update({ full_name: formData.full_name })
+        .eq('id', profile.id)
+      
+      if (supabaseError) {
+        throw supabaseError
+      }
+      
       setEditing(false)
     } catch (error: any) {
       setError(error.message || 'Failed to update profile')
@@ -145,7 +157,7 @@ export default function Profile() {
                 <div>
                   <p className="text-sm text-gray-500">Member Since</p>
                   <p className="font-medium text-gray-900">
-                    {new Date(profile.created_at).toLocaleDateString()}
+                    {new Date(profile.created_at || new Date()).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -156,7 +168,7 @@ export default function Profile() {
                 <Wallet className="h-5 w-5 text-green-500 mr-3" />
                 <div>
                   <p className="text-sm text-gray-500">Current Balance</p>
-                  <p className="font-medium text-gray-900">₦{profile.balance.toLocaleString()}</p>
+                  <p className="font-medium text-gray-900">₦{profile.balance?.toLocaleString() || '0'}</p>
                 </div>
               </div>
 
@@ -164,7 +176,7 @@ export default function Profile() {
                 <TrendingUp className="h-5 w-5 text-mining-500 mr-3" />
                 <div>
                   <p className="text-sm text-gray-500">Total Invested</p>
-                  <p className="font-medium text-gray-900">₦{profile.total_invested.toLocaleString()}</p>
+                  <p className="font-medium text-gray-900">₦{profile.total_invested?.toLocaleString() || '0'}</p>
                 </div>
               </div>
 
@@ -172,7 +184,7 @@ export default function Profile() {
                 <Award className="h-5 w-5 text-yellow-500 mr-3" />
                 <div>
                   <p className="text-sm text-gray-500">Total Earned</p>
-                  <p className="font-medium text-gray-900">₦{profile.total_earned.toLocaleString()}</p>
+                  <p className="font-medium text-gray-900">₦{profile.total_earned?.toLocaleString() || '0'}</p>
                 </div>
               </div>
             </div>
@@ -192,7 +204,7 @@ export default function Profile() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-green-900">Current Balance</p>
-                <p className="text-2xl font-bold text-green-600">₦{profile.balance.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">₦{profile.balance?.toLocaleString() || '0'}</p>
               </div>
             </div>
           </div>
@@ -204,7 +216,7 @@ export default function Profile() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-mining-900">Total Invested</p>
-                <p className="text-2xl font-bold text-mining-600">₦{profile.total_invested.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-mining-600">₦{profile.total_invested?.toLocaleString() || '0'}</p>
               </div>
             </div>
           </div>
@@ -216,18 +228,18 @@ export default function Profile() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-yellow-900">Total Earned</p>
-                <p className="text-2xl font-bold text-yellow-600">₦{profile.total_earned.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-yellow-600">₦{profile.total_earned?.toLocaleString() || '0'}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {profile.total_invested > 0 && (
+        {(profile.total_invested || 0) > 0 && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Return on Investment (ROI)</span>
               <span className="text-lg font-bold text-green-600">
-                +{((profile.total_earned / profile.total_invested) * 100).toFixed(1)}%
+                +{(((profile.total_earned || 0) / (profile.total_invested || 1)) * 100).toFixed(1)}%
               </span>
             </div>
           </div>
@@ -242,17 +254,17 @@ export default function Profile() {
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Account Age</span>
             <span className="text-sm font-medium">
-              {Math.floor((new Date().getTime() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24))} days
+              {Math.floor((new Date().getTime() - new Date(profile.created_at || new Date()).getTime()) / (1000 * 60 * 60 * 24))} days
             </span>
           </div>
           
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Withdrawal Status</span>
             <span className={`text-sm font-medium ${
-              (new Date().getTime() - new Date(profile.created_at).getTime()) >= (48 * 60 * 60 * 1000)
+              (new Date().getTime() - new Date(profile.created_at || new Date()).getTime()) >= (48 * 60 * 60 * 1000)
                 ? 'text-green-600' : 'text-yellow-600'
             }`}>
-              {(new Date().getTime() - new Date(profile.created_at).getTime()) >= (48 * 60 * 60 * 1000)
+              {(new Date().getTime() - new Date(profile.created_at || new Date()).getTime()) >= (48 * 60 * 60 * 1000)
                 ? 'Enabled' : 'Pending (48hr wait)'}
             </span>
           </div>

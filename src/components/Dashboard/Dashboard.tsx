@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Clock, TrendingUp, Wallet, Award, ArrowRight } from 'lucide-react'
+import { Clock, TrendingUp, Wallet, Award, ArrowRight, Package } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../utils/supabase/client'
 import WithdrawalModal from './WithdrawalModal'
@@ -21,7 +21,7 @@ interface UserMiner {
 }
 
 export default function Dashboard() {
-  const { profile, refreshProfile } = useAuth()
+  const { profile, refreshProfile, user } = useAuth()
   const [userMiners, setUserMiners] = useState<UserMiner[]>([])
   const [showWithdrawal, setShowWithdrawal] = useState(false)
   const [nextDrop, setNextDrop] = useState<Date | null>(null)
@@ -42,7 +42,7 @@ export default function Dashboard() {
   }, [userMiners, profile])
 
   const fetchUserMiners = async () => {
-    if (!profile) return
+    if (!user) return
 
     try {
       const { data, error } = await supabase
@@ -56,7 +56,7 @@ export default function Dashboard() {
             daily_return
           )
         `)
-        .eq('user_id', profile.id)
+        .eq('user_id', user.uid)
         .eq('active', true)
         .order('purchase_date', { ascending: false })
 
@@ -100,7 +100,7 @@ export default function Dashboard() {
   const checkWithdrawalEligibility = () => {
     if (!profile) return
 
-    const accountAge = new Date().getTime() - new Date(profile.created_at).getTime()
+    const accountAge = new Date().getTime() - new Date(profile.created_at || new Date()).getTime()
     const fortyEightHours = 48 * 60 * 60 * 1000
 
     setCanWithdraw(accountAge >= fortyEightHours)
@@ -110,7 +110,7 @@ export default function Dashboard() {
     if (!profile) return
 
     // Update withdrawal countdown
-    const accountCreated = new Date(profile.created_at).getTime()
+    const accountCreated = new Date(profile.created_at || new Date()).getTime()
     const fortyEightHours = 48 * 60 * 60 * 1000
     const eligibleTime = accountCreated + fortyEightHours
     const now = new Date().getTime()
@@ -174,7 +174,7 @@ export default function Dashboard() {
             </div>
             <div className="ml-5">
               <p className="text-sm font-medium text-gray-500">Balance</p>
-              <p className="text-2xl font-bold text-gray-900">₦{profile.balance.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₦{profile.balance?.toLocaleString() || '0'}</p>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function Dashboard() {
             </div>
             <div className="ml-5">
               <p className="text-sm font-medium text-gray-500">Total Invested</p>
-              <p className="text-2xl font-bold text-gray-900">₦{profile.total_invested.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₦{profile.total_invested?.toLocaleString() || '0'}</p>
             </div>
           </div>
         </div>
@@ -198,7 +198,7 @@ export default function Dashboard() {
             </div>
             <div className="ml-5">
               <p className="text-sm font-medium text-gray-500">Total Earned</p>
-              <p className="text-2xl font-bold text-gray-900">₦{profile.total_earned.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₦{profile.total_earned?.toLocaleString() || '0'}</p>
             </div>
           </div>
         </div>
@@ -232,6 +232,7 @@ export default function Dashboard() {
           <button
             onClick={() => setShowWithdrawal(true)}
             disabled={!canWithdraw || profile.balance === 0}
+            disabled={!canWithdraw || (profile?.balance || 0) === 0}
             className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
           >
             Withdraw
