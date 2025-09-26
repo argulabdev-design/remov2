@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { User, Mail, Calendar, Wallet, TrendingUp, Award, Edit2, Save, X } from 'lucide-react'
+import { User, Mail, Calendar, Wallet, TrendingUp, Award, CreditCard as Edit2, Save, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../utils/supabase/client'
 
