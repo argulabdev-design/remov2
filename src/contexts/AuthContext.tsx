@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           total_earned: 0
         })
 
-      if (error) {
+      if (error && error.code !== '23505') { // Ignore duplicate key errors
         console.error('Error creating user profile:', error)
       } else {
         // Fetch the newly created profile

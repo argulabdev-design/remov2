@@ -42,7 +42,7 @@ export default function Dashboard() {
   }, [userMiners, profile])
 
   const fetchUserMiners = async () => {
-    if (!user) return
+    if (!user?.uid) return
 
     try {
       const { data, error } = await supabase

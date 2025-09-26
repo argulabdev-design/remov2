@@ -40,13 +40,13 @@ export default function Header() {
   }, [user])
 
   const fetchUnreadNotifications = async () => {
-    if (!user) return
+    if (!user?.uid) return
 
     try {
       const { data, error } = await supabase
         .from('notifications')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', user.uid)
         .eq('read', false)
 
       if (!error) {
