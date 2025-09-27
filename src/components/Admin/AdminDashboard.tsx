@@ -30,7 +30,65 @@ interface Withdrawal {
   }
 }
 
+import { useState, useEffect } from 'react'
+import { Users, Ban, CheckCircle, Eye, MapPin } from 'lucide-react'
+import { supabase } from '../../utils/supabase/client'
+
+interface UserWithIP {
+  id: string
+  email: string
+  full_name: string
+  balance: number
+  total_invested: number
+  total_earned: number
+  created_at: string
+  last_login_ip?: string
+  is_banned?: boolean
+}
+
 export default function AdminDashboard() {
+  const [users, setUsers] = useState<UserWithIP[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setUsers(data || [])
+    } catch (error) {
+      console.error('Error fetching users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const toggleUserBan = async (userId: string, currentBanStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_banned: !currentBanStatus })
+        .eq('id', userId)
+
+      if (error) throw error
+      
+      setUsers(users.map(user => 
+        user.id === userId 
+          ? { ...user, is_banned: !currentBanStatus }
+          : user
+      ))
+    } catch (error) {
+      console.error('Error updating user ban status:', error)
+    }
+  }
+
   const [activeTab, setActiveTab] = useState('overview')
   const [miners, setMiners] = useState<Miner[]>([])
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
@@ -331,9 +389,165 @@ export default function AdminDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+        <p className="text-gray-600">Manage users, monitor activities, and oversee platform operations</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
+          <div className="flex items-center">
+            <Users className="w-8 h-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
+          <div className="flex items-center">
+            <Ban className="w-8 h-8 text-red-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Banned Users</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter(u => u.is_banned).length}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
+          <div className="flex items-center">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Active Users</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {users.filter(u => !u.is_banned).length}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
+          <div className="flex items-center">
+            <Eye className="w-8 h-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Balance</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${users.reduce((sum, u) => sum + (u.balance || 0), 0).toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Users Table */}
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">User Management</h2>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Balance
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Invested
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  IP Address
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    Loading users...
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                    No users found
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr key={user.id} className={user.is_banned ? 'bg-red-50' : ''}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.full_name || 'N/A'}
+                        </div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ${(user.balance || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ${(user.total_invested || 0).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-1" />
+                        {user.last_login_ip || 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        user.is_banned 
+                          ? 'bg-red-100 text-red-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {user.is_banned ? 'Banned' : 'Active'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => toggleUserBan(user.id, user.is_banned || false)}
+                        className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium ${
+                          user.is_banned
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                        } transition-colors`}
+                      >
+                        {user.is_banned ? (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                            Unban
+                          </>
+                        ) : (
+                          <>
+                            <Ban className="w-4 h-4 mr-1" />
+                            Ban
+                          </>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <div className="h-8 w-8 bg-red-500 rounded-lg flex items-center justify-center mr-3">

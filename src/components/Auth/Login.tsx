@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Eye, EyeOff, Pickaxe } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, KeyRound } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import ForgotPassword from './ForgotPassword'
 
 interface LoginProps {
   onSwitchToSignup: () => void
@@ -15,6 +16,7 @@ export default function Login({ onSwitchToSignup }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,6 +44,10 @@ export default function Login({ onSwitchToSignup }: LoginProps) {
       ...prev,
       [e.target.name]: e.target.value
     }))
+  }
+
+  if (showForgotPassword) {
+    return <ForgotPassword onBack={() => setShowForgotPassword(false)} />
   }
 
   return (
@@ -107,6 +113,17 @@ export default function Login({ onSwitchToSignup }: LoginProps) {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center mx-auto"
+            >
+              <KeyRound className="w-4 h-4 mr-1" />
+              Forgot Password?
+            </button>
           </div>
 
           <button

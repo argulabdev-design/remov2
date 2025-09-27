@@ -1,0 +1,46 @@
+[
+  {
+    "id": "miner-1",
+    "name": "Basic USDT Miner",
+    "price": 50,
+    "duration_days": 30,
+    "daily_return": 2.5,
+    "total_return_percentage": 150,
+    "description": "Entry-level mining plan with steady USDT returns",
+    "active": true,
+    "currency": "USDT"
+  },
+  {
+    "id": "miner-2", 
+    "name": "Advanced USDT Miner",
+    "price": 200,
+    "duration_days": 45,
+    "daily_return": 8.0,
+    "total_return_percentage": 180,
+    "description": "High-yield mining plan for experienced investors",
+    "active": true,
+    "currency": "USDT"
+  },
+  {
+    "id": "miner-3",
+    "name": "Premium USDT Miner", 
+    "price": 500,
+    "duration_days": 60,
+    "daily_return": 22.5,
+    "total_return_percentage": 270,
+    "description": "Premium mining plan with maximum returns",
+    "active": true,
+    "currency": "USDT"
+  },
+  {
+    "id": "miner-4",
+    "name": "Elite USDT Miner",
+    "price": 1000,
+    "duration_days": 90,
+    "daily_return": 50.0,
+    "total_return_percentage": 450,
+    "description": "Elite mining plan for serious investors",
+    "active": true,
+    "currency": "USDT"
+  }
+]

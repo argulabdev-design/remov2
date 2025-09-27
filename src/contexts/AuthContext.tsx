@@ -63,14 +63,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single()
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching user profile:', error)
-        // Create profile if it doesn't exist
-        const user = auth.currentUser
-        if (user) {
-          await createUserProfile(user)
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No user profile found, create one
+          const user = auth.currentUser
+          if (user) {
+            await createUserProfile(user)
+          }
+          return
+        } else {
+          console.error('Error fetching user profile:', error)
+          return
         }
-        return
       }
 
       if (data) {
@@ -86,7 +90,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
       }
     } catch (error) {
-      console.error('Error fetching profile:', error)
+      console.error('Unexpected error fetching profile:', error)
+      // Try to create profile if user exists
+      const user = auth.currentUser
+      if (user) {
+        await createUserProfile(user)
+      }
     }
   }
 
