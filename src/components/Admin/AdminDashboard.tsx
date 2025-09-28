@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Users, Package, CreditCard, Bell, Plus, Eye, Check, X } from 'lucide-react'
+import { Users, Package, CreditCard, Bell, Plus, Eye, Check, X, Ban, CheckCircle, MapPin } from 'lucide-react'
 import { supabase } from '../../utils/supabase/client'
 import CreateMinerModal from './CreateMinerModal'
 
@@ -30,10 +30,6 @@ interface Withdrawal {
   }
 }
 
-import { useState, useEffect } from 'react'
-import { Users, Ban, CheckCircle, Eye, MapPin } from 'lucide-react'
-import { supabase } from '../../utils/supabase/client'
-
 interface UserWithIP {
   id: string
   email: string
@@ -47,10 +43,23 @@ interface UserWithIP {
 }
 
 export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('overview')
   const [users, setUsers] = useState<UserWithIP[]>([])
+  const [miners, setMiners] = useState<Miner[]>([])
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
+  const [showCreateMiner, setShowCreateMiner] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalMiners: 0,
+    pendingWithdrawals: 0,
+    totalInvested: 0
+  })
 
   useEffect(() => {
+    fetchStats()
+    fetchMiners()
+    fetchWithdrawals()
     fetchUsers()
   }, [])
 
@@ -88,23 +97,6 @@ export default function AdminDashboard() {
       console.error('Error updating user ban status:', error)
     }
   }
-
-  const [activeTab, setActiveTab] = useState('overview')
-  const [miners, setMiners] = useState<Miner[]>([])
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
-  const [showCreateMiner, setShowCreateMiner] = useState(false)
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalMiners: 0,
-    pendingWithdrawals: 0,
-    totalInvested: 0
-  })
-
-  useEffect(() => {
-    fetchStats()
-    fetchMiners()
-    fetchWithdrawals()
-  }, [])
 
   const fetchStats = async () => {
     try {
@@ -184,8 +176,8 @@ export default function AdminDashboard() {
           user_id: withdrawal.user_id,
           title: status === 'completed' ? 'Withdrawal Approved' : 'Withdrawal Rejected',
           message: status === 'completed' 
-            ? `Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been processed.`
-            : `Your withdrawal request of ₦${withdrawal.amount.toLocaleString()} has been rejected.`,
+            ? `Your withdrawal of $${withdrawal.amount.toLocaleString()} USDT has been processed.`
+            : `Your withdrawal request of $${withdrawal.amount.toLocaleString()} USDT has been rejected.`,
           type: status === 'completed' ? 'success' : 'error'
         })
       }
@@ -214,7 +206,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-mining-600" />
+              <Users className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
@@ -228,7 +220,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <Package className="h-8 w-8 text-mining-600" />
+              <Package className="h-8 w-8 text-green-600" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
@@ -256,12 +248,12 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <Bell className="h-8 w-8 text-green-600" />
+              <Bell className="h-8 w-8 text-purple-600" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
                 <dt className="text-sm font-medium text-gray-500 truncate">Total Invested</dt>
-                <dd className="text-lg font-medium text-gray-900">₦{stats.totalInvested.toLocaleString()}</dd>
+                <dd className="text-lg font-medium text-gray-900">${stats.totalInvested.toLocaleString()} USDT</dd>
               </dl>
             </div>
           </div>
@@ -270,186 +262,11 @@ export default function AdminDashboard() {
     </div>
   )
 
-  const renderMiners = () => (
+  const renderUsers = () => (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Manage Miners</h3>
-        <button
-          onClick={() => setShowCreateMiner(true)}
-          className="flex items-center px-4 py-2 bg-mining-600 text-white rounded-md hover:bg-mining-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Miner
-        </button>
-      </div>
-
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {miners.map((miner) => (
-            <li key={miner.id} className="px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{miner.name}</p>
-                      <p className="text-sm text-gray-500">
-                        ₦{miner.price.toLocaleString()} • {miner.duration_days} days • ₦{miner.daily_return.toLocaleString()}/drop
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        miner.active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {miner.active ? 'Active' : 'Inactive'}
-                      </span>
-                      <button
-                        onClick={() => toggleMinerStatus(miner.id, miner.active)}
-                        className={`px-3 py-1 text-sm rounded-md ${
-                          miner.active
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                            : 'bg-green-100 text-green-700 hover:bg-green-200'
-                        }`}
-                      >
-                        {miner.active ? 'Deactivate' : 'Activate'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
-
-  const renderWithdrawals = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-medium text-gray-900">Manage Withdrawals</h3>
+      <h3 className="text-lg font-medium text-gray-900">User Management</h3>
       
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {withdrawals.map((withdrawal) => (
-            <li key={withdrawal.id} className="px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {withdrawal.users?.full_name || withdrawal.users?.email}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        ₦{withdrawal.amount.toLocaleString()} • {withdrawal.bank_name} • {withdrawal.account_number}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(withdrawal.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        withdrawal.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        withdrawal.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}
-                      </span>
-                      {withdrawal.status === 'pending' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleWithdrawalAction(withdrawal.id, 'completed')}
-                            className="p-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleWithdrawalAction(withdrawal.id, 'rejected')}
-                            className="p-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
-
-  const tabs = [
-    { id: 'overview', name: 'Overview', icon: Eye },
-    { id: 'miners', name: 'Miners', icon: Package },
-    { id: 'withdrawals', name: 'Withdrawals', icon: CreditCard },
-  ]
-
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">Manage users, monitor activities, and oversee platform operations</p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex items-center">
-            <Users className="w-8 h-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex items-center">
-            <Ban className="w-8 h-8 text-red-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Banned Users</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter(u => u.is_banned).length}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex items-center">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active Users</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {users.filter(u => !u.is_banned).length}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white p-6 rounded-xl shadow-sm border">
-          <div className="flex items-center">
-            <Eye className="w-8 h-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Balance</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${users.reduce((sum, u) => sum + (u.balance || 0), 0).toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Users Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">User Management</h2>
-        </div>
-        
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -499,10 +316,10 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${(user.balance || 0).toFixed(2)}
+                      ${(user.balance || 0).toFixed(2)} USDT
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${(user.total_invested || 0).toFixed(2)}
+                      ${(user.total_invested || 0).toFixed(2)} USDT
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center">
@@ -548,40 +365,165 @@ export default function AdminDashboard() {
           </table>
         </div>
       </div>
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-red-500 rounded-lg flex items-center justify-center mr-3">
-                <Users className="h-5 w-5 text-white" />
+    </div>
+  )
+
+  const renderMiners = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium text-gray-900">Manage Miners</h3>
+        <button
+          onClick={() => setShowCreateMiner(true)}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Miner
+        </button>
+      </div>
+
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-gray-200">
+          {miners.map((miner) => (
+            <li key={miner.id} className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{miner.name}</p>
+                      <p className="text-sm text-gray-500">
+                        ${miner.price.toLocaleString()} USDT • {miner.duration_days} days • ${miner.daily_return.toLocaleString()} USDT/drop
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        miner.active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {miner.active ? 'Active' : 'Inactive'}
+                      </span>
+                      <button
+                        onClick={() => toggleMinerStatus(miner.id, miner.active)}
+                        className={`px-3 py-1 text-sm rounded-md ${
+                          miner.active
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                      >
+                        {miner.active ? 'Deactivate' : 'Activate'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+
+  const renderWithdrawals = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-medium text-gray-900">Manage Withdrawals</h3>
+      
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-gray-200">
+          {withdrawals.map((withdrawal) => (
+            <li key={withdrawal.id} className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {withdrawal.users?.full_name || withdrawal.users?.email}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        ${withdrawal.amount.toLocaleString()} USDT • {withdrawal.bank_name} • {withdrawal.account_number}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(withdrawal.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        withdrawal.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        withdrawal.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}
+                      </span>
+                      {withdrawal.status === 'pending' && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleWithdrawalAction(withdrawal.id, 'completed')}
+                            className="p-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                          >
+                            <Check className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleWithdrawalAction(withdrawal.id, 'rejected')}
+                            className="p-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+
+  const tabs = [
+    { id: 'overview', name: 'Overview', icon: Eye },
+    { id: 'users', name: 'Users', icon: Users },
+    { id: 'miners', name: 'Miners', icon: Package },
+    { id: 'withdrawals', name: 'Withdrawals', icon: CreditCard },
+  ]
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <div className="flex justify-between items-center py-6">
+          <div className="flex items-center">
+            <div className="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+              <Users className="h-5 w-5 text-white" />
             </div>
+            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
           </div>
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
-                      activeTab === tab.id
-                        ? 'border-red-500 text-red-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {tab.name}
-                  </button>
-                )
-              })}
-            </nav>
-          </div>
+        </div>
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 mr-2" />
+                  {tab.name}
+                </button>
+              )
+            })}
+          </nav>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'overview' && renderOverview()}
+        {activeTab === 'users' && renderUsers()}
         {activeTab === 'miners' && renderMiners()}
         {activeTab === 'withdrawals' && renderWithdrawals()}
       </div>
